@@ -9,6 +9,7 @@
     "bcrypt": "^3.0.0",
     "body-parser": "^1.18.3",
     "express": "~4.16.0",
+    "fs": "0.0.1-security",
     "mongoose": "^5.2.8",
     "s3fs": "^2.5.0"
   }
