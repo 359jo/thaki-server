@@ -86,22 +86,22 @@ app.get("/api/v1/analytics/admins", (req, res) => {
 })
 
 // upload apis
-app.post("api/v1/upload", (req, res) => {
-  {/*
-    some logic to handle the file
-    using terminal
-  */}
-  const STREAM = fs.createReadStream(FILE.path)
-  fsImpl.writeFile(FILE.originalFilename, STREAM).then(function () {
-    fs.unlink(FILE.path, function (err) {
-      if (err) {
-        console.log("ERROR in save to s3 Bucket");
-      } else {
-        res.send("File Saved")
-      }
-    })
-  });
-})
+// app.post("api/v1/upload", (req, res) => {
+//   {/*
+//     some logic to handle the file
+//     using terminal
+//   */}
+//   const STREAM = fs.createReadStream(FILE.path)
+//   fsImpl.writeFile(FILE.originalFilename, STREAM).then(function () {
+//     fs.unlink(FILE.path, function (err) {
+//       if (err) {
+//         console.log("ERROR in save to s3 Bucket");
+//       } else {
+//         res.send("File Saved")
+//       }
+//     })
+//   });
+// })
 
 // connect to development port 3000
 
