@@ -178,8 +178,8 @@ app.get('/api/v1/get/all/objects', (req, res) => {
 })
 
 
-const PORT = 3000 || process.env.PORT
-app.listen(PORT, () => {
-  console.log(`server running on port ${PORT}`);
-})
+const PORT = process.env.PORT || 3000
+  app.listen(PORT, () => {
+    console.log(`server running on port ${PORT}`);
+  })
 
