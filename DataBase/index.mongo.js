@@ -1,6 +1,6 @@
 var mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost/Dashboard');
-
+const bcrypt = require("bcrypt")
 var db = mongoose.connection;
 
 db.on('error', function () {
@@ -12,12 +12,10 @@ db.once('open', function () {
 });
 
 var AdminSchema = mongoose.Schema({
-    username: String,
+    email: String,
     password: String
 });
 
 var Admin = mongoose.model('Admin', AdminSchema);
-
-
 
 module.exports.Admin = Admin;

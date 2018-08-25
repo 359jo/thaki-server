@@ -1,7 +1,7 @@
 const express = require('express');
 const bodyParser = require("body-parser")
 const app = express();
-const shell = require("shelljs")
+// const shell = require("shelljs")
 const fs = require('fs');
 const db = require("./DataBase/index.mongo")
 const bcrypt = require("bcrypt")
@@ -9,6 +9,7 @@ const AWS = require('aws-sdk')
 const multer = require('multer');
 const uuidv4 = require('uuid/v4');
 const path = require('path');
+
 // ------------------------------------------MIDDLE_WARES-----------------------------------------
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -41,6 +42,7 @@ const storage = multer.diskStorage({
 });
 // create the multer instance that will be used to upload/save the file
 const upload = multer({ storage });
+// const multipleUpload = multer({storage}).array('file')
 
 const SALT_ROUNDS = 10
 // For dev purposes only
@@ -48,7 +50,15 @@ AWS.config.update({
   accessKeyId: 'AKIAIR2SUDEWJCYE555Q',
   secretAccessKey: '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',
 });
-var s3 = new AWS.S3();
+const s3 = new AWS.S3();
+const BUCKET = 'admin-upload-test'
+const REGION = 'us-east-2'
+const ADMIN = {
+  email: "Admin@thaki.org",
+  password: 'admin'
+}
+
+
 // -----------------------------------------------------
 app.get("/", (req, res) => {
   res.send("get at path '/' ")
@@ -56,50 +66,58 @@ app.get("/", (req, res) => {
 // cridential APIs
 // -------------------------------ADD ADMIN API------------------------------------------------------------------
 app.post("/api/v1/addAdmin", (req, res) => {
-  console.log(req.body);
-
-  bcrypt.genSalt(SALT_ROUNDS, function (err, salt) {
+  console.log(req.body)
+  db.Admin.find({ email: req.body.email }, (err, data) => {
     if (err) {
-      throw err
+      res.send(`error while finding ${req.body.email}`)
+    } else if (data) {
+      res.send(`admin ${req.body.email} already exists`)
     }
-    bcrypt.hash(req.body.password, salt, (err, hash) => {
-      if (hash) {
-        var admin = new db.Admin({
-          username: req.body.username,
+    bcrypt.hash(req.body.password, SALT_ROUNDS, (err, hash) => {
+      if (err) {
+        console.log(err)
+      } else {
+        const admin = new db.Admin({
+          email: req.body.email,
           password: hash
         })
         admin.save((err, data) => {
           if (err) {
-            res.send("Error while saving Admin Please try once more")
-          }
-          else {
-            console.log("saved");
-            res.send(`Admin saved with credintials ${data.username} and password "${hash}"`)
+            res.send(`error while savind admin ${req.body.email}`)
+          } else {
+            console.log(data);
           }
         })
       }
-      else {
-        res.send(err)
-      }
-    });
-  });
+    })
+  })
 })
 // --------------------------------LOGIN API-------------------------------------------
 app.post("/api/v1/login", (req, res) => {
   // console.log(req.body);
-  db.Admin.find({ username: req.body.username }, (err, data) => {
-    if (err) {
-      res.send("Error while finding Admin " + req.body.username)
-    }
-    else {
-      bcrypt.compare(req.body.password, data.password, (err, match) => {
-        if (match)
-          res.send(data)
-        else
-          res.send("password doesn't match")
-      })
-    }
-  })
+  if (req.body.email === ADMIN.email && req.body.password === ADMIN.password) {
+    res.send(ADMIN)
+  } else {
+    db.Admin.findOne({ email: req.body.email }, (err, data) => {
+      console.log(data);
+      if (err) {
+        res.send("Error while finding Admin " + req.body.email)
+      }
+      else if (data) {
+        bcrypt.compare(req.body.password, data.password, (err, match) => {
+          console.log(match);
+          if (match) {
+            res.send(data)
+          }
+          else {
+            res.send("password doesn't match")
+          }
+        })
+      } else {
+        res.sendStatus(401)
+      }
+    })
+  }
 })
 
 // ------------------------------------ADMIN ANALYTICS API---------------------------------------
@@ -113,50 +131,48 @@ app.get("/api/v1/analytics/admins", (req, res) => {
   })
 })
 
-// upload APIs
+// ----------------------------AWS APIs-------------------------------------
 
 app.post("/api/v1/upload", upload.single('selectedFile'), (req, res) => {
   const FILE = req.file
-
   fs.readFile(FILE.path, (err, data) => {
     if (err) { throw err; }
     var base64data = new Buffer(data, 'binary');
     s3.putObject({
-      Bucket: 'admin-upload-test',
+      Bucket: BUCKET,
       Key: FILE.originalname,
       Body: base64data,
       ACL: 'public-read'
-    }, (err, data) => {
-      console.log('Successfully uploaded package.', data.Location);
-      res.send("File Saved")
+    }, (resp) => {
+      console.log('Successfully uploaded package.');
+      console.log(arguments);
+
+      res.send("File Saved!")
     });
   })
-
-
-
 })
 
 app.post('/api/v1/get/object', (req, res) => {
-  const {fileName } = req.body
+  const { fileName } = req.body
   s3.getObject({
-    Bucket: 'admin-upload-test',
+    Bucket: BUCKET,
     Key: fileName,
-  },(err,data)=>{
-    if(err){throw err}
+  }, (err, data) => {
+    if (err) { throw err }
     console.log('data from aws');
     console.log(data);
-    res.send(data)
+    res.json({ data: data, url: `https://s3.${REGION}.amazonaws.com/${BUCKET}/${fileName}` })
   })
 })
+
+
 app.get('/api/v1/get/all/objects', (req, res) => {
   s3.listObjects({
-    Bucket: 'admin-upload-test',
+    Bucket: BUCKET,
   }, (err, data) => {
     if (err) {
       console.log(err);
     }
-    console.log('data from aws');
-    console.log(data);
     res.send(data.Contents)
   })
 })
@@ -166,3 +182,4 @@ const PORT = 3000 || process.env.PORT
 app.listen(PORT, () => {
   console.log(`server running on port ${PORT}`);
 })
+
