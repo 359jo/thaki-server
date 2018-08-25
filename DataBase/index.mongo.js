@@ -1,5 +1,5 @@
 var mongoose = require('mongoose');
-mongoose.connect('mongodb://localhost/Dashboard');
+mongoose.connect('mongodb://Nooreddein:thaki-dashboard@ds133622.mlab.com:33622/thaki-dashboard');
 const bcrypt = require("bcrypt")
 var db = mongoose.connection;
 
