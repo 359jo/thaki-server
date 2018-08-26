@@ -47,8 +47,8 @@ const upload = multer({ storage });
 const SALT_ROUNDS = 10
 // For dev purposes only
 AWS.config.update({
-  accessKeyId: 'AKIAIR2SUDEWJCYE555Q',
-  secretAccessKey: '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',
+  accessKeyId: '',
+  secretAccessKey: '',
 });
 const s3 = new AWS.S3();
 const BUCKET = 'admin-upload-test'
@@ -176,7 +176,6 @@ app.get('/api/v1/get/all/objects', (req, res) => {
     res.send(data.Contents)
   })
 })
-
 
 const PORT = process.env.PORT || 3000
   app.listen(PORT, () => {
