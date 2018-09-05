@@ -1,15 +1,12 @@
 const express = require('express');
 const bodyParser = require("body-parser")
 const app = express();
-// const shell = require("shelljs")
 const fs = require('fs');
-const db = require("./DataBase/index.mongo")
-const bcrypt = require("bcrypt")
 const AWS = require('aws-sdk')
 const multer = require('multer');
 const uuidv4 = require('uuid/v4');
 const path = require('path');
-
+const session = require("express-session");
 // ------------------------------------------MIDDLE_WARES-----------------------------------------
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -17,6 +14,11 @@ app.use(express.urlencoded({ extended: false }));
 app.use(bodyParser.urlencoded({ extended: false }))
 // parse application/json
 app.use(bodyParser.json())
+app.use(session({
+  secret: "thaki",
+  resave: true,
+  saveUninitialized: true
+}))
 
 // ----------------GLOBAL VARIABLES---------------------
 const storage = multer.diskStorage({
@@ -42,93 +44,49 @@ const storage = multer.diskStorage({
 });
 // create the multer instance that will be used to upload/save the file
 const upload = multer({ storage });
-// const multipleUpload = multer({storage}).array('file')
 
-const SALT_ROUNDS = 10
+
+
 // For dev purposes only
 AWS.config.update({
-  accessKeyId: '',
-  secretAccessKey: '',
+  accessKeyId: 'AKIAIT2B6GC2D2PU7AJQ',
+  secretAccessKey: '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',
 });
+AWS.config.logger = console;
 const s3 = new AWS.S3();
-const BUCKET = 'admin-upload-test'
+const BUCKET = 'admin-upload'
 const REGION = 'us-east-2'
+
 const ADMIN = {
   email: "Admin@thaki.org",
-  password: 'admin'
+  password: "admin"
 }
 
 
 // -----------------------------------------------------
 app.get("/", (req, res) => {
-  res.send("get at path '/' ")
+  s3.listObjects({
+    Bucket: BUCKET,
+  }, (err, data) => {
+    if (err) {
+      console.log(err);
+    }
+    res.send(data.Contents)
+  })
 })
 // cridential APIs
-// -------------------------------ADD ADMIN API------------------------------------------------------------------
-app.post("/api/v1/addAdmin", (req, res) => {
-  console.log(req.body)
-  db.Admin.find({ email: req.body.email }, (err, data) => {
-    if (err) {
-      res.send(`error while finding ${req.body.email}`)
-    } else if (data) {
-      res.send(`admin ${req.body.email} already exists`)
-    }
-    bcrypt.hash(req.body.password, SALT_ROUNDS, (err, hash) => {
-      if (err) {
-        console.log(err)
-      } else {
-        const admin = new db.Admin({
-          email: req.body.email,
-          password: hash
-        })
-        admin.save((err, data) => {
-          if (err) {
-            res.send(`error while savind admin ${req.body.email}`)
-          } else {
-            console.log(data);
-          }
-        })
-      }
-    })
-  })
-})
 // --------------------------------LOGIN API-------------------------------------------
 app.post("/api/v1/login", (req, res) => {
-  // console.log(req.body);
+
   if (req.body.email === ADMIN.email && req.body.password === ADMIN.password) {
-    res.send(ADMIN)
-  } else {
-    db.Admin.findOne({ email: req.body.email }, (err, data) => {
-      console.log(data);
-      if (err) {
-        res.send("Error while finding Admin " + req.body.email)
-      }
-      else if (data) {
-        bcrypt.compare(req.body.password, data.password, (err, match) => {
-          console.log(match);
-          if (match) {
-            res.send(data)
-          }
-          else {
-            res.send("password doesn't match")
-          }
-        })
-      } else {
-        res.sendStatus(401)
-      }
+    req.session.regenerate(() => {
+      req.session.user = ADMIN.email
+      console.log(req.session);
+      res.send(ADMIN)
     })
+  } else {
+    res.send("password doesn't match")
   }
-})
-
-// ------------------------------------ADMIN ANALYTICS API---------------------------------------
-app.get("/api/v1/analytics/admins", (req, res) => {
-
-  db.Admin.find({}, (err, data) => {
-    if (err)
-      res.send("error while fetching the data")
-    else
-      res.send(`${data.length}`)
-  })
 })
 
 // ----------------------------AWS APIs-------------------------------------
@@ -146,11 +104,12 @@ app.post("/api/v1/upload", upload.single('selectedFile'), (req, res) => {
     }, (resp) => {
       console.log('Successfully uploaded package.');
       console.log(arguments);
-
-      res.send("File Saved!")
+      res.send("File Saved!");
     });
   })
 })
+
+
 
 app.post('/api/v1/get/object', (req, res) => {
   const { fileName } = req.body
@@ -169,16 +128,55 @@ app.post('/api/v1/get/object', (req, res) => {
 app.get('/api/v1/get/all/objects', (req, res) => {
   s3.listObjects({
     Bucket: BUCKET,
-  }, (err, data) => {
+  }, (err, { Contents }) => {
     if (err) {
       console.log(err);
     }
-    res.send(data.Contents)
+    res.send({ ...Contents })
   })
 })
 
-const PORT = process.env.PORT || 3000
-  app.listen(PORT, () => {
-    console.log(`server running on port ${PORT}`);
+
+
+app.post('/api/v1/analytics/pie', (req, res) => {
+  s3.listObjectsV2({
+    Bucket: BUCKET,
+    Prefix: "/",
+  }, (err, { Contents }) => {
+    if (err) { throw err }
+    else{
+      console.log(Contents);
+      const resArrEn = []
+      const resArrAR = []
+      res.send(Contents)
+      for (let i = 0; i < Contents.length; i++) {
+        const date = Contents[i]["Key"].split("s")[1].split("-")
+        console.log(date);
+        
+      }
+    }
+    
   })
+  // res.send({
+  //   en: [
+  //     ["Successful Downloads", 44],
+  //     ["Paused Downloads", 23],
+  //     ["Failed Downloads", 12]
+  //   ], ar: [
+  //     ["التحميلات الناجحة", 44],
+  //     ["التحميلات الموقفة", 23],
+  //     ["التحميلات الفاشلة", 12]
+  //   ]
+  // })
+})
+
+
+
+
+const PORT = process.env.PORT || 3000
+app.listen(PORT, () => {
+  console.log(`server running on port ${PORT}`);
+})
+
+// zainzinc079079
 
