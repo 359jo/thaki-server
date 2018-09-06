@@ -2,21 +2,25 @@ const express = require('express');
 const bodyParser = require("body-parser");
 const exec = require('child_process').exec;
 const app = express();
-const morgan = require("morgan");
 const fs = require('fs');
-const db = require("./DataBase/index.mongo");
-const bcrypt = require("bcrypt");
-const AWS = require('aws-sdk');
+const AWS = require('aws-sdk')
 const multer = require('multer');
 const uuidv4 = require('uuid/v4');
 const path = require('path');
-app.use(morgan('combined'));
+const session = require("express-session");
 
 // ------------------------------------------MIDDLE_WARES-----------------------------------------
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: false }))
 // parse application/json
-app.use(bodyParser.json());
+
+app.use(bodyParser.json())
+app.use(session({
+  secret: "thaki",
+  resave: true,
+  saveUninitialized: true
+}))
+
 // ----------------GLOBAL VARIABLES---------------------
 
 const storage = multer.diskStorage({
@@ -42,135 +46,57 @@ const storage = multer.diskStorage({
 });
 // create the multer instance that will be used to upload/save the file
 const upload = multer({ storage });
-// const multipleUpload = multer({storage}).array('file')
 
-const SALT_ROUNDS = 10;
+
+var monthsEn = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+var monthsAr = ["يناير", "فبراير", "مارس", "إبريل", "مايو", "يونيو",
+  "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+
 
 // For dev purposes only
 
 AWS.config.update({
-  accessKeyId: 'AKIAIR2SUDEWJCYE555Q',
-  secretAccessKey: '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',
-});
 
+  accessKeyId: '',
+  secretAccessKey: '',
+});
+AWS.config.logger = console;
 const s3 = new AWS.S3();
-const BUCKET = 'admin-upload-test';
-const REGION = 'us-east-2';
+const BUCKET = 'admin-upload'
+const REGION = 'us-east-2'
 
 const ADMIN = {
   email: "Admin@thaki.org",
-  password: 'admin'
-};
+  password: "admin"
+}
+
 
 
 // -----------------------------------------------------
 app.get("/", (req, res) => {
-  res.send("get at path '/' ")
-});
+  s3.listObjects({
+    Bucket: BUCKET,
+  }, (err, data) => {
+    if (err) {
+      console.log(err);
+    }
+    res.send(data.Contents)
+  })
+})
 // cridential APIs
-// ------------------------------- ADMIN API------------------------------------------------------------------
-app.post("/api/v1/addAdmin", (req, res) => {
-  const { email, password } = req.body;
-  //find all admins in db
-  db.Admin.find({ email: email }, (err, data) => {
-    if (err) {
-      //handle error
-      res.send(`error while finding ${email}`);
-    } else if (data.length > 0) {
-      //check if an admin with the same credintial already exists
-      res.send(`admin ${email} already exists`);
-    }
-    //if no admin found hash password and store in db
-    bcrypt.hash(password, SALT_ROUNDS, (err, hash) => {
-      if (err) {
-        // handle error
-        console.log(err);
-      } else {
-        // create admin with password hashed
-        const admin = new db.Admin({
-          email: email,
-          password: hash
-        });
-        // save admin in db
-        admin.save((err, data) => {
-          if (err) {
-            res.send(`error while savind admin ${email}`);
-          } else {
-            console.log(data);
-            res.send(` Admin ${email} has been saved`);
-          };
-        });
-      };
-    });
-  });
-});
-
-
-
+// --------------------------------LOGIN API-------------------------------------------
 app.post("/api/v1/login", (req, res) => {
-  const { email, password } = req.body;
-  // check if the credintials belong to the super admin
-  if (email === ADMIN.email && password === ADMIN.password) {
-    // authinticate and grant access
-    res.send(ADMIN);
+
+  if (req.body.email === ADMIN.email && req.body.password === ADMIN.password) {
+    req.session.regenerate(() => {
+      req.session.user = ADMIN.email
+      res.send(ADMIN)
+    })
   } else {
-    // check if the admin trying to log in is regesterd
-    db.Admin.findOne({ email: email }, (err, data) => {
-      console.log(data);
-      if (err) {
-        // handle error
-        res.send("Error while finding Admin " + email);
-      }
-      // check if admin exists
-      // if not
-      else if (!data) {
-        //admin does not exists
-        res.send(`Admin ${email} does not exist`);
-      }
-      //admin exists
-      else {
-        // compare password to authintcate
-        bcrypt.compare(password, data.password, (err, match) => {
-          console.log(match);
-          console.log(err);
-          // if the password matches the password in te db
-          //grant access
-          if (match) {
-            res.send(data);
-          }
-          else {
-            res.send("password doesn't match");
-          };
-        });
-      };
-    });
-  };
-});
-
-
-app.post("/api/v1/delete/admin", (req, res) => {
-  const { id } = req.body;
-  console.log(req.body);
-  // find admin with the same id and delete from the db
-  db.Admin.findOneAndRemove({ _id: id }, (err, data) => {
-    if (err) {
-      // handle error
-      res.send(`Error while deleting admin ${data.email}`);
-    }
-    res.send(`Admin ${data.email} has been deleted`);
-  });
+    res.send("password doesn't match")
+  }
 })
 
-
-app.get("/api/v1/analytics/admins", (req, res) => {
-  // get all damins
-  db.Admin.find({}, (err, data) => {
-    if (err)
-      res.send("error while fetching the data");
-    else
-      res.send(data);
-  });
-});
 
 // ----------------------------AWS APIs-------------------------------------
 
@@ -182,18 +108,21 @@ app.post("/api/v1/upload", upload.single('selectedFile'), (req, res) => {
     // convert to 64base data
     var base64data = new Buffer(data, 'binary');
     // upload object to was s3 bucket
+
     s3.putObject({
       Bucket: BUCKET,
+      Delimiter: '/Test',
       Key: FILE.originalname,
       Body: base64data,
       ACL: 'public-read'
     }, (resp) => {
       console.log('Successfully uploaded package.');
-      console.log(arguments);
       res.send("File Saved!");
     });
   });
 });
+
+
 
 app.post('/api/v1/get/object', (req, res) => {
   const { fileName } = req.body;
@@ -203,10 +132,8 @@ app.post('/api/v1/get/object', (req, res) => {
     Key: fileName,
   }, (err, data) => {
     if (err) { throw err; }
-    console.log('data from aws');
-    console.log(data);
     // send data to the client and the download url
-    res.json({ data , objectSize:data.ContentLength , url: `https://s3.${REGION}.amazonaws.com/${BUCKET}/${fileName}` });
+    res.json({ data, objectSize: data.ContentLength, url: `https://s3.${REGION}.amazonaws.com/${BUCKET}/${fileName}` });
   });
 });
 
@@ -216,23 +143,96 @@ app.get('/api/v1/get/all/objects', (req, res) => {
   // find all objects in aws s3 bucket
   s3.listObjects({
     Bucket: BUCKET,
-  }, (err, data) => {
+    Prefix: "Test"
+  }, (err, { Contents }) => {
     if (err) {
       console.log(err);
     }
-    res.send(data.Contents);
-  });
-});
 
-// the PORT variable is for connecting the server to the localhost (127.0.0.1)
-const PORT = process.env.PORT || 3000;
+    res.send({ Contents })
+  })
+})
+
+app.get("/api/v1/analytics/downloads", (req, res) => {
+  s3.listObjectsV2({
+    Bucket: BUCKET,
+    Prefix: "/"
+  }, (err, data) => {
+    if (err) { throw err }
+    res.send(data)
+  })
+})
+
+app.post('/api/v1/analytics/monthly/col', (req, res) => {
+  s3.listObjectsV2({
+    Bucket: BUCKET,
+    Prefix: "logs/",
+  }, (err, { Contents }) => {
+    if (err) { throw err }
+    else {
+      const resObj = { en: [], ar: [] }
+
+      const obj = {
+        en: {
+          January: 0,
+          February: 0,
+          March: 0,
+          April: 0,
+          May: 0,
+          June: 0,
+          July: 0,
+          August: 0,
+          September: 0,
+          October: 0,
+          November: 0,
+          December: 0
+        },
+        ar: {
+          يناير: 0,
+          فبراير: 0,
+          مارس: 0,
+          إبريل: 0,
+          مايو: 0,
+          يونيو: 0,
+          يوليو: 0,
+          أغسطس: 0,
+          سبتمبر: 0,
+          أكتوبر: 0,
+          نوفمبر: 0,
+          ديسمبر: 0
+        }
+      }
+      for (let i = 0; i < Contents.length; i++) {
+        const dateArr = Contents[i]["Key"].split("s")[1].split("-")
+        const monthEn = monthsEn[parseInt(dateArr[1]) - 1]
+        const monthAr = monthsAr[parseInt(dateArr[1] - 1)]
+        obj.en[monthEn]++
+        obj.ar[monthAr]++
+      }
+
+      for (let key in obj.en) {
+        resObj.en.push([key, obj.en[key]])
+      }
+
+      for (let key in obj.ar) {
+        resObj.ar.push([key, obj.ar[key]])
+      }
+      res.send(resObj)
+    }
+  })
+
+})
 
 
-app.listen(PORT
-  // connect server to the localhost on the PORT 3000 for development and the env variable PORT for the deployment
-  , () => {
-    console.log(`server running on port ${PORT}`);
-  });
+
+
+const PORT = process.env.PORT || 3000
+app.listen(PORT, () => {
+  console.log(`server running on port ${PORT}`);
+})
+
+// zainzinc079079
+
 
 // coments for usage forward-------------------------------------------------------------------------------------------------
 
