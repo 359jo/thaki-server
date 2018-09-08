@@ -21,7 +21,7 @@ app.use(session({
   saveUninitialized: true
 }))
 
-
+var alo = 0
  
 
 // ----------------GLOBAL VARIABLES---------------------
@@ -151,7 +151,6 @@ app.get('/api/v1/get/all/objects', (req, res) => {
     if (err) {
       console.log(err);
     }
-
     res.send({ Contents })
   })
 })
@@ -207,7 +206,7 @@ app.post('/api/v1/analytics/monthly/col', (req, res) => {
       }
       for (let i = 0; i < Contents.length; i++) {
         const dateArr = Contents[i]["Key"].split("s")[1].split("-")
-        const monthEn = monthsEn[parseInt(dateArr[1]) - 1]
+        const monthEn = monthsEn[parseInt(dateArr[1] - 1)]
         const monthAr = monthsAr[parseInt(dateArr[1] - 1)]
         obj.en[monthEn]++
         obj.ar[monthAr]++
