@@ -21,6 +21,9 @@ app.use(session({
   saveUninitialized: true
 }))
 
+
+ 
+
 // ----------------GLOBAL VARIABLES---------------------
 
 const storage = multer.diskStorage({
