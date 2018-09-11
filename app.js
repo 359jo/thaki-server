@@ -167,7 +167,7 @@ app.post('/api/v1/analytics/monthly/col', (req, res) => {
     }, (err, { Contents }) => {
         if (err) { throw err }
         else {
-
+            const keyObj = {}
             const obj = {
                 en: {
                     January: 0,
@@ -199,15 +199,20 @@ app.post('/api/v1/analytics/monthly/col', (req, res) => {
                 }
             }
             for (let i = 0; i < Contents.length; i++) {
+                keyObj[i.toString()] = Contents[i].Key
+            }
+            for(let key in keyObj){
+                console.log(keyObj[key]);
+                
                 s3.getObject({
                     Bucket: BUCKET,
-                    Key: Contents[i]["Key"]
+                    Key: keyObj[key]
                 }, async (err, data) => {
                     if (err) { throw err }
                     const log = await s3alp(data.Body.toString("utf-8"))
                     if ( log && log.operation === 'REST.GET.OBJECT' && !log.request_uri.includes("logs")) {
                         console.log(log);
-                        const dateArr = log.time.toString()
+                        const dateArr = log.time.toString().split('T')[0].split("-")
                         console.log(dateArr);
                         
                         const monthEn = monthsEn[parseInt(dateArr[1] - 1)]
