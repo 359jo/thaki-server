@@ -74,14 +74,15 @@ const ADMIN = {
 
 // -----------------------------------------------------
 app.get("/", (req, res) => {
-    s3.listObjects({
-        Bucket: BUCKET,
-    }, (err, data) => {
-        if (err) {
-            console.log(err);
-        }
-        res.send(data.Contents)
-    })
+    // s3.listObjects({
+    //     Bucket: BUCKET,
+    // }, (err, data) => {
+    //     if (err) {
+    //         console.log(err);
+    //     }
+    //     res.send(data.Contents)
+    // })
+    res.send("GET AT path  \n '/'")
 })
 // cridential APIs
 // --------------------------------LOGIN API-------------------------------------------
