@@ -72,6 +72,7 @@ const ADMIN = {
 
 
 
+
 // -----------------------------------------------------
 app.get("/", (req, res) => {
     // s3.listObjects({
@@ -158,13 +159,14 @@ app.get('/api/v1/get/all/objects', (req, res) => {
 })
 
 app.post('/api/v1/analytics/monthly/col', (req, res) => {
+    const resObj = { en: [], ar: [] }
+
     s3.listObjectsV2({
         Bucket: BUCKET,
         Prefix: "logs/",
     }, (err, { Contents }) => {
         if (err) { throw err }
         else {
-            const resObj = { en: [], ar: [] }
 
             const obj = {
                 en: {
@@ -197,11 +199,25 @@ app.post('/api/v1/analytics/monthly/col', (req, res) => {
                 }
             }
             for (let i = 0; i < Contents.length; i++) {
-                const dateArr = Contents[i]["Key"].split("/")[1].split("-")
-                const monthEn = monthsEn[parseInt(dateArr[1] - 1)]
-                const monthAr = monthsAr[parseInt(dateArr[1] - 1)]
-                obj.en[monthEn]++
-                obj.ar[monthAr]++
+                s3.getObject({
+                    Bucket: BUCKET,
+                    Key: Contents[i]["Key"]
+                }, async (err, data) => {
+                    if (err) { throw err }
+                    const log = await s3alp(data.Body.toString("utf-8"))
+                    if ( log && log.operation === 'REST.GET.OBJECT' && !log.request_uri.includes("logs")) {
+                        console.log(log);
+                        const dateArr = log.time.toString()
+                        console.log(dateArr);
+                        
+                        const monthEn = monthsEn[parseInt(dateArr[1] - 1)]
+                        const monthAr = monthsAr[parseInt(dateArr[1] - 1)]
+                        obj.en[monthEn]++
+                        obj.ar[monthAr]++
+                        // console.log(obj);
+                        
+                    }
+                })
             }
 
             for (let key in obj.en) {
@@ -217,26 +233,11 @@ app.post('/api/v1/analytics/monthly/col', (req, res) => {
 
 })
 
-const cb = (err, data) => {
-    const ALO = []
-    if (err) { throw err }
-    const { Contents } = data;
-    Contents.map((elem) => {
-        s3.getObject({ Bucket: BUCKET, Key: elem.Key }, (err, data) => {
-            const raw_log = elem.Body.toString("utf-8")
-            const LOG = s3alp(raw_log)
-            console.log(LOG);
-            
-            ALO.push(LOG)
-        })
-    })
-}
 
 app.get("/test", (req, res) => {
-    s3.listObjectsV2({
-        Bucket: BUCKET,
-        Prefix: "logs"
-    }, cb)
+    const P = new Promise((resolve, reject) => {
+        resolve
+    })
 })
 
 
