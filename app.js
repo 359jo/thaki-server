@@ -1,6 +1,5 @@
 const express = require('express');
 const bodyParser = require("body-parser");
-const exec = require('child_process').exec;
 const app = express();
 const fs = require('fs');
 const AWS = require('aws-sdk')
@@ -8,7 +7,7 @@ const multer = require('multer');
 const uuidv4 = require('uuid/v4');
 const path = require('path');
 const session = require("express-session");
-const s3alp = require('s3-access-log-parser')
+const s3alp = require('s3-access-log-parser');
 // ------------------------------------------MIDDLE_WARES-----------------------------------------
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: false }))
@@ -113,10 +112,10 @@ app.post("/api/v1/upload", upload.single('selectedFile'), (req, res) => {
 
         s3.putObject({
             Bucket: BUCKET,
-            Delimiter: '/Test',
+            Delimiter: 'Test/',
             Key: FILE.originalname,
             Body: base64data,
-            ACL: 'public-read'
+            ACL: "public-read"
         }, (resp) => {
             console.log('Successfully uploaded package.');
             res.send("File Saved!");
@@ -125,10 +124,8 @@ app.post("/api/v1/upload", upload.single('selectedFile'), (req, res) => {
 });
 
 
-
 app.post('/api/v1/get/object', (req, res) => {
     const { fileName } = req.body;
-    
     // find object with the same neame provideed by the client or admin
     s3.getObject({
         Bucket: BUCKET,
@@ -136,32 +133,25 @@ app.post('/api/v1/get/object', (req, res) => {
     }, (err, data) => {
         if (err) { throw err; }
         // send data to the client and the download url
-        res.json({ data, objectSize: data.ContentLength, url: `https://s3.${REGION}.amazonaws.com/${BUCKET}/${fileName}` });
+        res.send({
+            data, objectSize: data.ContentLength,
+            url: `https://s3.${REGION}.amazonaws.com/${BUCKET}/${fileName}`
+        });
     });
 });
-
 
 
 app.get('/api/v1/get/all/objects', (req, res) => {
     // find all objects in aws s3 bucket
     s3.listObjects({
         Bucket: BUCKET,
-        Prefix: "Test"
+        Prefix: "Test/"
     }, (err, { Contents }) => {
         if (err) {
             console.log(err);
         }
-        res.send({ Contents })
-    })
-})
-
-app.get("/api/v1/analytics/downloads", (req, res) => {
-    s3.listObjectsV2({
-        Bucket: BUCKET,
-        Prefix: "/"
-    }, (err, data) => {
-        if (err) { throw err }
-        res.send(data)
+        Contents.splice(0, 1)
+        res.send(Contents)
     })
 })
 
@@ -205,7 +195,7 @@ app.post('/api/v1/analytics/monthly/col', (req, res) => {
                 }
             }
             for (let i = 0; i < Contents.length; i++) {
-                const dateArr = Contents[i]["Key"].split("s")[1].split("-")
+                const dateArr = Contents[i]["Key"].split("/")[1].split("-")
                 const monthEn = monthsEn[parseInt(dateArr[1] - 1)]
                 const monthAr = monthsAr[parseInt(dateArr[1] - 1)]
                 obj.en[monthEn]++
@@ -225,41 +215,38 @@ app.post('/api/v1/analytics/monthly/col', (req, res) => {
 
 })
 
-app.get("/test", async (req, res) => {
-    const obj = {}
-    let resArr = []
-    await s3.listObjectsV2({ Bucket: BUCKET, Prefix: "logs/" }, (err, { Contents }) => {
-        if (err) { throw err }
-        Contents.splice(0, 1)
-        Contents.map((elem, i) => {
-            obj[i.toString()] = elem.Key
+const cb = (err, data) => {
+    const ALO = []
+    if (err) { throw err }
+    const { Contents } = data;
+    Contents.map((elem) => {
+        s3.getObject({ Bucket: BUCKET, Key: elem.Key }, (err, data) => {
+            const raw_log = elem.Body.toString("utf-8")
+            const LOG = s3alp(raw_log)
+            console.log(LOG);
+            
+            ALO.push(LOG)
         })
-        // return s3.getObject({ Bucket: BUCKET, Key: elem.Key }, (err, data) => {
-        //     if (err) { throw err }
-        //     const Data = data.Body.toString('utf-8')
-        //     obj.arr.push(Data)
-        // })
-        for (const key in obj) {
-            s3.getObject({ Bucket: BUCKET, Key: obj[key] }, (err, data) => {
-                if (err) { throw err }
-                const raw_log = data.Body.toString('utf-8')
-                const LOG = s3alp(raw_log)
-                console.log(LOG);
-                resArr.push(LOG)
-            })
-        }
-       res.send(resArr)
     })
+}
+
+app.get("/test", (req, res) => {
+    s3.listObjectsV2({
+        Bucket: BUCKET,
+        Prefix: "logs"
+    }, cb)
 })
 
 
+
+
 const PORT = process.env.PORT || 3000
+
 app.listen(PORT, () => {
     console.log(`server running on port ${PORT}`);
 })
 
-// zainzinc079079
-
+// zainzinc07907
 
 // coments for usage forward-------------------------------------------------------------------------------------------------
 
