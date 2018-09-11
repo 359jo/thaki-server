@@ -82,7 +82,8 @@ app.get("/", (req, res) => {
     //     }
     //     res.send(data.Contents)
     // })
-    res.send("GET AT path  \n '/'")
+    const alo = ["GET AT path  \n '/'"]
+    res.send(alo)
 })
 // cridential APIs
 // --------------------------------LOGIN API-------------------------------------------
