@@ -244,6 +244,8 @@ app.get("/test", (req, res) => {
 
 
 
+
+
 app.post("/api/v1/addCat", (req, res) => {
     const { cat } = req.body
     s3.createBucket({ Bucket: cat }, (err, data) => {
@@ -280,6 +282,7 @@ app.delete("/api/v1/delete/object", (req, res) => {
         res.sendStatus(201)
     })
 })
+
 
 
 app.post("/api/v1/delete/cat", (req, res) => {
