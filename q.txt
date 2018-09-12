@@ -1,0 +1,49 @@
+Hello Team,
+
+Thanks for your time today. On the call were Rudayna, Hugh, Nooreddein and Samer. The following is an account of the discussion:
+
+Introduced were Nooreddein and Samer who comprise the core development team. 
+
+Discussed was Features and issues to fix in the near future.
+
+Presented were 3 features for the Adminstrators Dashboard, and 3 features for the desktop application. 
+
+
+Adminstrators Dashboard:
+Feature 1: "Adding Adminstrators"
+The 'Super Admin' can add Adminstrators to the dashboard to view the analytics and upload new content
+
+Feature 2: " Analytics"
+The Adminstrators Dashboard can provide the adminstrators with real time data to manage the content
+example number of successful downloads , number of pending downloads etc.
+
+Feature 3: "Uploading content"
+The Adminstrators can upload content to be view in the desktop application and to be downloaded by the users
+
+
+Desktop Client:
+
+Feature 1: "downloading content"
+The user can download content provided by the adminstrators from the cloud storage (AWS S3).
+
+Feature2: "Refresh button"
+The user can refresh the application to ensure the content was downloaded
+
+Feature 3: "open content from desktop application"
+
+
+
+Features that could increase application's engagement:
+
+Catigorize content:
+Catigorize content so that all content is viewed under the same provider.
+
+modification:
+prevent the user from making any modifications to the downloaded content".
+
+Storage Management:
+manage the storage at the user's machine so that only content with the right size is downloaded
+
+We will meet at the same time next week.
+
+Waves,
