@@ -49,7 +49,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 
-var monthsEn = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+var monthsEn = ["January", "February", "March", "April", "May", "June", "July", "August", "Sep", "October", "November", "December"];
 var monthsAr = ["يناير", "فبراير", "مارس", "إبريل", "مايو", "يونيو",
     "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
 
@@ -58,8 +58,8 @@ var monthsAr = ["يناير", "فبراير", "مارس", "إبريل", "ماي�
 
 AWS.config.update({
 
-    accessKeyId: 'AKIAJGO76I244RAZEKBQ',
-    secretAccessKey: '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',
+    accessKeyId: '',
+    secretAccessKey: '',
 });
 const s3 = new AWS.S3();
 const BUCKET = 'admin-upload'
@@ -178,7 +178,7 @@ app.post('/api/v1/analytics/monthly/col', (req, res) => {
                     June: 0,
                     July: 0,
                     August: 0,
-                    September: 0,
+                    Sep: 0,
                     October: 0,
                     November: 0,
                     December: 0
@@ -198,29 +198,26 @@ app.post('/api/v1/analytics/monthly/col', (req, res) => {
                     ديسمبر: 0
                 }
             }
+
             for (let i = 0; i < Contents.length; i++) {
                 keyObj[i.toString()] = Contents[i].Key
             }
-            for(let key in keyObj){
-                console.log(keyObj[key]);
-                
+
+            for (let key in keyObj) {
                 s3.getObject({
                     Bucket: BUCKET,
                     Key: keyObj[key]
                 }, async (err, data) => {
                     if (err) { throw err }
                     const log = await s3alp(data.Body.toString("utf-8"))
-                    if ( log && log.operation === 'REST.GET.OBJECT' && !log.request_uri.includes("logs")) {
-                        console.log(log);
-                        const dateArr = log.time.toString().split('T')[0].split("-")
-                        console.log(dateArr);
-                        
-                        const monthEn = monthsEn[parseInt(dateArr[1] - 1)]
-                        const monthAr = monthsAr[parseInt(dateArr[1] - 1)]
-                        obj.en[monthEn]++
-                        obj.ar[monthAr]++
-                        // console.log(obj);
-                        
+                    if (log && log.operation === 'REST.GET.OBJECT' && !log.request_uri.includes("logs")) {
+                        const dateArr = await log.time.toString().split(" ")
+                        const monthEn = dateArr[1]
+                        const monthAr = monthsAr[monthsEn.indexOf(dateArr[1])]
+                        console.log(monthEn)
+                        console.log(obj.en[monthEn]++)
+                        console.log("*******************************");
+
                     }
                 })
             }
