@@ -58,8 +58,8 @@ var monthsAr = ["يناير", "فبراير", "مارس", "إبريل", "ماي�
 
 AWS.config.update({
 
-    accessKeyId: '',
-    secretAccessKey: '',
+    accessKeyId: 'AKIAIGWAT6KENTIVJ4NQ',
+    secretAccessKey: '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',
 });
 const s3 = new AWS.S3();
 const BUCKET = 'admin-upload'
@@ -93,10 +93,10 @@ app.post("/api/v1/login", (req, res) => {
     if (req.body.email === ADMIN.email && req.body.password === ADMIN.password) {
         req.session.regenerate(() => {
             req.session.user = ADMIN.email
-            res.send(ADMIN)
+            res.sendStatus(200, ADMIN)
         })
     } else {
-        res.send("password doesn't match")
+        res.sendStatus(403)
     }
 })
 
@@ -106,6 +106,8 @@ app.post("/api/v1/login", (req, res) => {
 app.post("/api/v1/upload", upload.single('selectedFile'), (req, res) => {
 
     const FILE = req.file;
+    const { cat } = req.body
+
     // read the uploaded file from the admins
     fs.readFile(FILE.path, (err, data) => {
         if (err) { throw err; }
@@ -114,8 +116,7 @@ app.post("/api/v1/upload", upload.single('selectedFile'), (req, res) => {
         // upload object to was s3 bucket
 
         s3.putObject({
-            Bucket: BUCKET,
-            Delimiter: 'Test/',
+            Bucket: cat,
             Key: FILE.originalname,
             Body: base64data,
             ACL: "public-read"
@@ -214,10 +215,9 @@ app.post('/api/v1/analytics/monthly/col', (req, res) => {
                         const dateArr = await log.time.toString().split(" ")
                         const monthEn = dateArr[1]
                         const monthAr = monthsAr[monthsEn.indexOf(dateArr[1])]
-                        console.log(monthEn)
                         console.log(obj.en[monthEn]++)
                         console.log("*******************************");
-
+                        console.log(obj.ar[monthAr]++)
                     }
                 })
             }
@@ -242,6 +242,56 @@ app.get("/test", (req, res) => {
     })
 })
 
+
+
+app.post("/api/v1/addCat", (req, res) => {
+    const { cat } = req.body
+    s3.createBucket({ Bucket: cat }, (err, data) => {
+        if (err) {
+            throw err;
+            res.sendStatus(401)
+        }
+        res.send(data)
+    })
+})
+
+app.get("/api/v1/get/cats", (req, res) => {
+    s3.listBuckets((err, { Buckets }) => {
+        if (err) {
+            throw err;
+            res.sendStatus(401)
+        }
+        res.send(Buckets)
+    })
+})
+
+
+
+app.delete("/api/v1/delete/object", (req, res) => {
+    const { cat, key } = req.body
+    s3.deleteObject({
+        Bucket: cat,
+        Key: key
+    }, (err, data) => {
+        if (err) {
+            throw err;
+            res.sendStatus(401)
+        }
+        res.sendStatus(201)
+    })
+})
+
+
+app.post("/api/v1/delete/cat", (req, res) => {
+    const { cat } = req.body
+    s3.deleteBucket({ Bucket: cat }, (err, data) => {
+        if (err) {
+            throw err;
+            res.sendStatus(401)
+        }
+        res.sendStatus(201)
+    })
+})
 
 
 
