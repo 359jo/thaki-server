@@ -6,7 +6,7 @@
     "npm": "6.4.1"
   },
   "scripts": {
-    "start": "node app.js"
+    "start": "nodemon app.js"
   },
   "dependencies": {
     "aws-sdk": "^2.299.0",

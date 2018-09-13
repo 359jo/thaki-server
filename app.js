@@ -107,24 +107,26 @@ app.post("/api/v1/upload", upload.single('selectedFile'), (req, res) => {
 
     const FILE = req.file;
     const { cat } = req.body
-
+    console.log(req.body);
+    
     // read the uploaded file from the admins
     fs.readFile(FILE.path, (err, data) => {
         if (err) { throw err; }
         // convert to 64base data
         var base64data = new Buffer(data, 'binary');
         // upload object to was s3 bucket
-
         s3.putObject({
             Bucket: cat,
             Key: FILE.originalname,
             Body: base64data,
             ACL: "public-read"
         }, (resp) => {
-            console.log('Successfully uploaded package.');
-            res.send("File Saved!");
+            console.log("FILE SAVED");
+            res.sendStatus(201);
         });
     });
+
+
 });
 
 
@@ -243,7 +245,9 @@ app.get("/test", (req, res) => {
 })
 
 
-
+app.get('/favicon.ico:1',(req,res)=>{
+    res.send("ALO")
+})
 
 
 app.post("/api/v1/addCat", (req, res) => {
