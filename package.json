@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "aws-sdk": "^2.299.0",
-    "bcrypt": "^3.0.0",
     "body-parser": "^1.18.3",
     "express": "~4.16.0",
     "express-session": "^1.15.6",
