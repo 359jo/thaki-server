@@ -106,7 +106,9 @@ app.post("/api/v1/login", (req, res) => {
 app.post("/api/v1/upload", upload.single('selectedFile'), (req, res) => {
 
     const FILE = req.file;
+
     const { cat } = req.body;
+
 
     // read the uploaded file from the admins
     fs.readFile(FILE.path, (err, data) => {
@@ -114,17 +116,18 @@ app.post("/api/v1/upload", upload.single('selectedFile'), (req, res) => {
         // convert to 64base data
         var base64data = new Buffer(data, 'binary');
         // upload object to was s3 bucket
-
         s3.putObject({
             Bucket: cat,
             Key: FILE.originalname,
             Body: base64data,
             ACL: "public-read"
         }, (resp) => {
-            console.log('Successfully uploaded package.');
-            res.send("File Saved!");
+            console.log("FILE SAVED");
+            res.sendStatus(201);
         });
     });
+
+
 });
 
 
@@ -249,6 +252,13 @@ app.post('/api/v1/analytics/monthly/col', (req, res) => {
 
 
 
+
+app.get('/favicon.ico:1',(req,res)=>{
+    res.send("ALO")
+})
+
+
+
 app.post("/api/v1/addCat", (req, res) => {
     const { cat } = req.body
     s3.createBucket({ Bucket: cat }, (err, data) => {
@@ -285,6 +295,7 @@ app.delete("/api/v1/delete/object", (req, res) => {
         res.sendStatus(201)
     })
 })
+
 
 
 app.post("/api/v1/delete/cat", (req, res) => {
