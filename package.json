@@ -5,6 +5,9 @@
   "scripts": {
     "start": "node app.js"
   },
+  "engines":{
+      "node":"8.11.4"
+  },
   "dependencies": {
     "aws-sdk": "^2.299.0",
     "bcrypt": "^3.0.0",
