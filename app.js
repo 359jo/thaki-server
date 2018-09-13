@@ -106,7 +106,7 @@ app.post("/api/v1/login", (req, res) => {
 app.post("/api/v1/upload", upload.single('selectedFile'), (req, res) => {
 
     const FILE = req.file;
-    const { cat } = req.body
+    const { cat } = req.body;
 
     // read the uploaded file from the admins
     fs.readFile(FILE.path, (err, data) => {
@@ -158,7 +158,7 @@ app.get('/api/v1/get/all/objects', (req, res) => {
         res.send(Contents)
     })
 })
-
+// ATTENTION THIS API HAS A BUG IN IT WHICH MEANS IT DOES NOT WORK
 app.post('/api/v1/analytics/monthly/col', (req, res) => {
     const resObj = { en: [], ar: [] }
 
@@ -199,29 +199,40 @@ app.post('/api/v1/analytics/monthly/col', (req, res) => {
                     ديسمبر: 0
                 }
             }
-
+            // loop over the Contents array from aws
             for (let i = 0; i < Contents.length; i++) {
+                // store each key in an object for later usage
+                // the key is the name of the log so we can read its body and parse it later
                 keyObj[i.toString()] = Contents[i].Key
             }
-
+            // loop over the keys of logs in the object
             for (let key in keyObj) {
+                // get the logs body from aws s3 bucket
                 s3.getObject({
+                    // will be changed later to work on all categories
                     Bucket: BUCKET,
+                    // key of the log
                     Key: keyObj[key]
                 }, async (err, data) => {
                     if (err) { throw err }
+                    // parse the body of the log for usage
                     const log = await s3alp(data.Body.toString("utf-8"))
+                    // check if the operation is GET.OBJECT or download of content not logs
                     if (log && log.operation === 'REST.GET.OBJECT' && !log.request_uri.includes("logs")) {
+                        // split the date for usage it can be viewed in this form ["day","month","date","year"]
                         const dateArr = await log.time.toString().split(" ")
+                        // store the month in a variable
                         const monthEn = dateArr[1]
+                        // get the month for usage
                         const monthAr = monthsAr[monthsEn.indexOf(dateArr[1])]
+                        // inc the value of the download
                         console.log(obj.en[monthEn]++)
                         console.log("*******************************");
                         console.log(obj.ar[monthAr]++)
                     }
                 })
             }
-
+            // ADD the value to the response object in both english and arabic
             for (let key in obj.en) {
                 resObj.en.push([key, obj.en[key]])
             }
@@ -229,17 +240,11 @@ app.post('/api/v1/analytics/monthly/col', (req, res) => {
             for (let key in obj.ar) {
                 resObj.ar.push([key, obj.ar[key]])
             }
+            // send the response object to the dashboard 
             res.send(resObj)
         }
     })
 
-})
-
-
-app.get("/test", (req, res) => {
-    const P = new Promise((resolve, reject) => {
-        resolve
-    })
 })
 
 
