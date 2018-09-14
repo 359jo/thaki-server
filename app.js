@@ -21,9 +21,7 @@ app.use(session({
 }))
 
 
-
 // ----------------GLOBAL VARIABLES---------------------
-
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         /*
@@ -58,8 +56,8 @@ var monthsAr = ["يناير", "فبراير", "مارس", "إبريل", "ماي�
 
 AWS.config.update({
 
-    accessKeyId: 'AKIAIGWAT6KENTIVJ4NQ',
-    secretAccessKey: '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',
+    accessKeyId: 'AKIAJYMVWPAL44EL2IFQ',
+    secretAccessKey: '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',
 });
 const s3 = new AWS.S3();
 const BUCKET = 'admin-upload'

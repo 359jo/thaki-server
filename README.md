@@ -9,3 +9,11 @@ Adminstrators can do CRUD operation on both content and categories
 Thaki-server Collects data from the client for analytical purposes 
 
 It collects data accourding to the GDPR agreament 
+
+
+
+#How to run 
+
+1- clone this repo
+2- run npm install in the root of this repo
+3- run nom start
