@@ -56,8 +56,8 @@ var monthsAr = ["يناير", "فبراير", "مارس", "إبريل", "ماي�
 
 AWS.config.update({
 
-    accessKeyId: 'AKIAJYMVWPAL44EL2IFQ',
-    secretAccessKey: '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',
+    accessKeyId: 'AKIAIMN6XX2R5Y2NL3SA',
+    secretAccessKey: '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',
 });
 const s3 = new AWS.S3();
 const BUCKET = 'admin-upload'
@@ -251,10 +251,9 @@ app.post('/api/v1/analytics/monthly/col', (req, res) => {
 
 
 
-app.get('/favicon.ico:1',(req,res)=>{
+app.get('/favicon.ico:1', (req, res) => {
     res.send("ALO")
 })
-
 
 
 app.post("/api/v1/addCat", (req, res) => {
@@ -306,8 +305,6 @@ app.post("/api/v1/delete/cat", (req, res) => {
         res.sendStatus(201)
     })
 })
-
-
 
 const PORT = process.env.PORT || 3000
 
