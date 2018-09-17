@@ -59,8 +59,8 @@ var monthsAr = ["يناير", "فبراير", "مارس", "إبريل", "ماي�
 
 AWS.config.update({
 
-    accessKeyId: 'AKIAIMN6XX2R5Y2NL3SA',
-    secretAccessKey: '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',
+    accessKeyId: '',
+    secretAccessKey: '',
 });
 const s3 = new AWS.S3();
 const BUCKET = 'admin-upload'
