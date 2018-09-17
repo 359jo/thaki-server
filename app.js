@@ -8,12 +8,15 @@ const uuidv4 = require('uuid/v4');
 const path = require('path');
 const session = require("express-session");
 const s3alp = require('s3-access-log-parser');
+const cors = require('cors')
 // ------------------------------------------MIDDLE_WARES-----------------------------------------
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: false }))
 // parse application/json
 
 app.use(bodyParser.json())
+
+app.use(cors())
 app.use(session({
     secret: "thaki",
     resave: true,
@@ -21,9 +24,7 @@ app.use(session({
 }))
 
 
-
 // ----------------GLOBAL VARIABLES---------------------
-
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         /*
@@ -58,8 +59,8 @@ var monthsAr = ["يناير", "فبراير", "مارس", "إبريل", "ماي�
 
 AWS.config.update({
 
-    accessKeyId: 'AKIAIGWAT6KENTIVJ4NQ',
-    secretAccessKey: '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',
+    accessKeyId: '',
+    secretAccessKey: '',
 });
 const s3 = new AWS.S3();
 const BUCKET = 'admin-upload'
@@ -108,8 +109,7 @@ app.post("/api/v1/upload", upload.single('selectedFile'), (req, res) => {
     const FILE = req.file;
 
     const { cat } = req.body;
-
-
+    console.log(FILE);
     // read the uploaded file from the admins
     fs.readFile(FILE.path, (err, data) => {
         if (err) { throw err; }
@@ -126,8 +126,6 @@ app.post("/api/v1/upload", upload.single('selectedFile'), (req, res) => {
             res.sendStatus(201);
         });
     });
-
-
 });
 
 
@@ -150,6 +148,9 @@ app.post('/api/v1/get/object', (req, res) => {
 
 app.get('/api/v1/get/all/objects', (req, res) => {
     // find all objects in aws s3 bucket
+
+    const { cat } = req.body;
+    
     s3.listObjects({
         Bucket: BUCKET,
         Prefix: "Test/"
@@ -253,10 +254,9 @@ app.post('/api/v1/analytics/monthly/col', (req, res) => {
 
 
 
-app.get('/favicon.ico:1',(req,res)=>{
+app.get('/favicon.ico:1', (req, res) => {
     res.send("ALO")
 })
-
 
 
 app.post("/api/v1/addCat", (req, res) => {
@@ -308,8 +308,6 @@ app.post("/api/v1/delete/cat", (req, res) => {
         res.sendStatus(201)
     })
 })
-
-
 
 const PORT = process.env.PORT || 3000
 
